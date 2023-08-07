@@ -242,7 +242,19 @@ t43_clean_mi = pd.DataFrame(np.array(table_43_excel_clean), index=t43_index_clea
 
 # table 30
 t30_transactions = t30_table_30_mi.copy()   # create deep copy
-t30_transactions = t30_transactions.iloc[:,0:78]    # drop the columns at the end that do not contain activities
+## below commented as a test: first check for errors, then see if substitution for t30_transaction fixes GDP values
+# t30_transactions = t30_transactions.iloc[:,0:78]    # drop the columns at the end that do not contain activities
+
+## dropping the columns with '..' entries:
+# Direct purchases abroad by residents
+# cif/fob adjustment on imports
+t30_transactions_dpabr = t30_transactions.iloc[:,t30_transactions.columns.get_level_values(1)=='Direct purchases abroad by residents']
+iloc_dpabr = np.where(t30_transactions.columns.get_loc_level('Direct purchases abroad by residents', level=1)[0] == True)[0][0]
+t30_transactions.drop(t30_transactions.columns[iloc_dpabr], axis=1, inplace=True)
+
+t30_transactions_ciffob = t30_transactions.iloc[:,t30_transactions.columns.get_level_values(1)=='cif/fob adjustment on imports']
+iloc_ciffob = np.where(t30_transactions.columns.get_loc_level('cif/fob adjustment on imports', level=1)[0] == True)[0][0]
+t30_transactions.drop(t30_transactions.columns[iloc_ciffob], axis=1, inplace=True)
 
 # test for future use of multiindex in for loops: 
 # list of values within level 0 of the index
