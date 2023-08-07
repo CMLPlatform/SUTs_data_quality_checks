@@ -357,7 +357,18 @@ print('T30: There is a difference in calculated total activity at basic prices, 
 
 # table 43
 t43_transactions = t43_clean_mi.copy()   # create deep copy
-t43_transactions = t43_transactions.iloc[:,0:78]    # until Final demand begins
+# turn off as test: 
+# t43_transactions = t43_transactions.iloc[:,0:78]    # until Final demand begins
+
+#then drop column with '..'; of which: Domestic purchases by non-residents
+# it contains a portion of the column to the left, so not necessary.
+t43_transactions_owdpbnr = t43_transactions.iloc[:,t43_transactions.columns.get_level_values(2)=='of which: Domestic purchases by non-residents']
+iloc_owdpbnr = np.where(t43_transactions.columns.get_loc_level('of which: Domestic purchases by non-residents', level=2)[0] == True)[0][0]
+t43_transactions.drop(t43_transactions.columns[iloc_owdpbnr], axis=1, inplace=True)
+# drops the column, but intermediate totals of the upper levels are not dropped
+t43_col_l0 = t43_transactions.columns.get_loc_level('Final consumption expenditure', level=0)
+# t43_col_l1 = t43_transactions.columns.get_loc_level('Final consumption expenditure', level=1)
+
 
 # drop all rows where: intermediate totals are shown
 for tuple_entry in t43_transactions.index:    
@@ -390,6 +401,8 @@ for tuple_entry in t43_transactions.columns:
             if np.isnan(value):
                 pass
         else:
+            
+            
             # print(value)
             try:
                 # 1 less level in columns compared to table 30
@@ -399,11 +412,42 @@ for tuple_entry in t43_transactions.columns:
                 pass
             else:
                 loc_series = t43_transactions.columns.get_loc_level(value, level=1)
-            true_ilocs = np.where(loc_series[0] == True)
-            if len(true_ilocs[0]) > 1:
-                # print('duplicate found!', true_ilocs[0])
-                iloc = true_ilocs[0][0]
-                t43_transactions.drop(t43_transactions.columns[iloc], axis = 1, inplace=True)   # need to specify axis here
+                #no indent after theis else? --> this is the fix to let the second try-except-else work with the same variable names
+                true_ilocs = np.where(loc_series[0] == True)
+                if len(true_ilocs[0]) > 1:
+                    # print('duplicate found!', true_ilocs[0])
+                    iloc = true_ilocs[0][0]
+                    t43_transactions.drop(t43_transactions.columns[iloc], axis = 1, inplace=True)   # need to specify axis here
+                
+            # the below is a test to drop intermediate total columns based on level 1 (non-transactions)
+            # it drops ALL columns. Syntax does not seem different from the one above. only difference is the level indication.
+            try:
+                loc_series = t43_transactions.columns.get_loc_level(value, level=0)
+            except KeyError:
+                pass
+            else:
+                print(value)    # prints every name in level 1
+                loc_series = t43_transactions.columns.get_loc_level(value, level=0)
+                #indented below as test: was running also when the conditions above for level 1 were running.
+                true_ilocs = np.where(loc_series[0] == True)
+                if len(true_ilocs[0]) > 1:
+                    # print('duplicate found!', true_ilocs[0])
+                    iloc = true_ilocs[0][0]
+                    #test
+                    print(iloc)
+                    t43_transactions.drop(t43_transactions.columns[iloc], axis = 1, inplace=True)   # need to specify axis here
+                    
+                    # Specified columns are dropped without using .drop() in this try-except-else instance
+                    # however, without the second try-except-else, they are not dropped
+                    # on next iteration, probably the variables (same names: loc_series, true_ilocs, etc.) still hold true for dropping conditions, 
+                    # and the columns are dropped in the next cycle
+                    # dropping is done based on iloc, not level, so the above can and does happen.
+                    # size t43_transactions, with: (65,72), without: (65,75)
+                    # solution 1: either keep it like this with written explanation, or move conditions so that the code makes sense
+                    # solution 2(!): change variable names
+                    # solution 3(used): indent if statement after else in which the length of true_ilocs is tested, so it's only done if in that block there's a double occurence.
+                       
+                
                 
 # sum remaining in dataframe
 t43_total_inputs = t43_transactions.sum()
@@ -574,9 +618,14 @@ gdp_expenditure_use_sum = gdp_expenditure_use.sum().sum()  # first sum creates a
 # gdp_expenditure_use_sumsum = gdp_expenditure_use_sum.sum()
 # imports = t30_table_30_mi.iloc[:, t30_table_30_mi.columns.get_level_values(1)=='Imports, cif']
 # gdp_expenditure_supply_sum = imports.sum().sum()
+# necessary_columns_neg = [
+#     t30_table_30_mi.iloc[:, t30_table_30_mi.columns.get_level_values(1)=='Imports, cif']
+#     ]
+
 necessary_columns_neg = [
-    t30_table_30_mi.iloc[:, t30_table_30_mi.columns.get_level_values(1)=='Imports, cif']
+    t30_transactions.iloc[:, t30_transactions.columns.get_level_values(1)=='Imports, cif']
     ]
+
 gdp_expenditure_supply_sum = necessary_columns_neg[0].sum().sum()
 
 gdp_expenditure = gdp_expenditure_use_sum - gdp_expenditure_supply_sum  # too high: mistake in exports? 
@@ -586,7 +635,7 @@ SU_GDP_approaches_results["expenditure"] = gdp_expenditure
 # GDP = Gross VA (BP) + Taxes less subsidies on products (ST)
 # Gross VA = Total output at BP (ST) - Intermediate consumption (UT)
 gross_va = total_supply_bp - intermediate_consumption
-tls_op = t30_table_30_mi.iloc[:, t30_table_30_mi.columns.get_level_values(0)=='Taxes less subsidies on products'].sum().sum()
+tls_op = t30_transactions.iloc[:, t30_transactions.columns.get_level_values(0)=='Taxes less subsidies on products'].sum().sum()
 # tls_op calculation is FAULTY, taxes less subsidies should be 88095, instead of 154731
 # not because a totals row is included
 # t30_table_30_mi STILL CONTAINS THE INTERMEDIATE TOTALS ROWS (AND COLS?)
