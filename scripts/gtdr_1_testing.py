@@ -342,7 +342,9 @@ for tuple_entry in t30_transactions.columns:    # should just be working on leve
         
 
 # sum remaining in dataframe
-t30_total_inputs = t30_transactions.sum()
+# t30_total_inputs = t30_transactions.sum()
+#slice 0:65 (so up to and including 64 --> all transactions)
+t30_total_inputs = t30_transactions.iloc[:,0:65].sum()
 # t30_total_inputs_1 = t30_transactions.cumsum()  # does not work!
 # to do: replace '..' earlier
 # t30_total_inputs.drop(t30_total_inputs.index[66], inplace=True) # contains the .., to do: drop earlier
@@ -366,6 +368,12 @@ t43_transactions_owdpbnr = t43_transactions.iloc[:,t43_transactions.columns.get_
 iloc_owdpbnr = np.where(t43_transactions.columns.get_loc_level('of which: Domestic purchases by non-residents', level=2)[0] == True)[0][0]
 t43_transactions.drop(t43_transactions.columns[iloc_owdpbnr], axis=1, inplace=True)
 # drops the column, but intermediate totals of the upper levels are not dropped
+# it contains a portion of the column to the left, so not necessary.
+# droping the re-export column
+t43_transactions_eowre = t43_transactions.iloc[:,t43_transactions.columns.get_level_values(1)=='of which: Re-export']
+iloc_eowre = np.where(t43_transactions.columns.get_loc_level('of which: Re-export', level=1)[0] == True)[0][0]
+t43_transactions.drop(t43_transactions.columns[iloc_eowre], axis=1, inplace=True)
+
 t43_col_l0 = t43_transactions.columns.get_loc_level('Final consumption expenditure', level=0)
 # t43_col_l1 = t43_transactions.columns.get_loc_level('Final consumption expenditure', level=1)
 
@@ -449,8 +457,10 @@ for tuple_entry in t43_transactions.columns:
                        
                 
                 
-# sum remaining in dataframe
-t43_total_inputs = t43_transactions.sum()
+# sum remaining in dataframe ---> this needs to be sliced now, because not only transactions in this df.
+# t43_total_inputs = t43_transactions.sum()
+# slice transactions
+t43_total_inputs = t43_transactions.iloc[:,0:65].sum()
 
 t43_total_inputs_result = t43_total_inputs.sum()
 intermediate_consumption = t43_total_inputs_result # rewrite as function
@@ -596,23 +606,64 @@ fce_h_nr = t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(2)=='of wh
 # this column ONLY contains '..' in the intermediate fields, while still contributing.
 
 # will fd_hh yield a dataframe of 2 columns? --> YES
-fd_hh = t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Final consumption expenditure by households, domestic concept']
-exports = t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports']
+# fd_hh = t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Final consumption expenditure by households, domestic concept']
+# exports = t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports']
+# exports_simple = exports.iloc[:,0]  # important: in absence of unique names for levels, slice resulting df.
+# necessary_columns_pos = [
+#     t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Final consumption expenditure by households, domestic concept'].iloc[:,0],
+#     # t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(2)=='of which: Domestic purchases by non-residents'],
+#     t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Final consumption expenditure by NIPSH'],
+#     t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Final consumption expenditure by government'],
+#     t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Gross fixed capital formation'],
+#     t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Changes in inventories'],
+#     t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Acquisitions less disposals of valuables'],
+#     # t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,0] # works, but dim 78, instead of 78,1
+#     # additional slicing creates a series instead of a df. If this is a problem: resize
+#     t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,0] - t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,1]
+#     ]
+
+# exports_net = t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,0] - t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,1]
+# gdp_expenditure_use = pd.concat(necessary_columns_pos, axis=1)
+# gdp_expenditure_use_sum = gdp_expenditure_use.sum().sum()  # first sum creates a series, 2nd creates a float or int
+# # gdp_expenditure_use_sumsum = gdp_expenditure_use_sum.sum()
+# # imports = t30_table_30_mi.iloc[:, t30_table_30_mi.columns.get_level_values(1)=='Imports, cif']
+# # gdp_expenditure_supply_sum = imports.sum().sum()
+# # necessary_columns_neg = [
+# #     t30_table_30_mi.iloc[:, t30_table_30_mi.columns.get_level_values(1)=='Imports, cif']
+# #     ]
+
+# necessary_columns_neg = [
+#     t30_transactions.iloc[:, t30_transactions.columns.get_level_values(1)=='Imports, cif']
+#     ]
+
+# gdp_expenditure_supply_sum = necessary_columns_neg[0].sum().sum()
+
+# gdp_expenditure = gdp_expenditure_use_sum - gdp_expenditure_supply_sum  # too high: mistake in exports? 
+
+# SU_GDP_approaches_results["expenditure"] = gdp_expenditure
+
+## changing variable names
+fd_hh = t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Final consumption expenditure by households, domestic concept']
+exports = t43_transactions.iloc[:, t43_transactions.columns.get_level_values(0)=='Exports']
 exports_simple = exports.iloc[:,0]  # important: in absence of unique names for levels, slice resulting df.
 necessary_columns_pos = [
-    t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Final consumption expenditure by households, domestic concept'].iloc[:,0],
-    # t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(2)=='of which: Domestic purchases by non-residents'],
-    t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Final consumption expenditure by NIPSH'],
-    t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Final consumption expenditure by government'],
-    t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Gross fixed capital formation'],
-    t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Changes in inventories'],
-    t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(1)=='Acquisitions less disposals of valuables'],
-    # t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,0] # works, but dim 78, instead of 78,1
+    t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Final consumption expenditure by households, domestic concept'].iloc[:,0],
+    # t43_transactions.iloc[:, t43_clean_mi.columns.get_level_values(2)=='of which: Domestic purchases by non-residents'],
+    t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Final consumption expenditure by NIPSH'],
+    t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Final consumption expenditure by government'],
+    t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Gross fixed capital formation'],
+    t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Changes in inventories'],
+    t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Acquisitions less disposals of valuables'],
+    # t43_transactions.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,0] # works, but dim 78, instead of 78,1
     # additional slicing creates a series instead of a df. If this is a problem: resize
-    t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,0] - t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,1]
+    # the following 
+    # t43_transactions.iloc[:, t43_transactions.columns.get_level_values(0)=='Exports'].iloc[:,0] - t43_transactions.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,1]
+    t43_transactions.iloc[:, t43_transactions.columns.get_level_values(0)=='Exports']
     ]
 
-exports_net = t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,0] - t43_clean_mi.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,1]
+# comented out the exports net, not used somewhere else? 
+# exports_net = t43_transactions.iloc[:, t43_transactions.columns.get_level_values(0)=='Exports'].iloc[:,0] - t43_transactions.iloc[:, t43_transactions.columns.get_level_values(0)=='Exports'].iloc[:,1]
+
 gdp_expenditure_use = pd.concat(necessary_columns_pos, axis=1)
 gdp_expenditure_use_sum = gdp_expenditure_use.sum().sum()  # first sum creates a series, 2nd creates a float or int
 # gdp_expenditure_use_sumsum = gdp_expenditure_use_sum.sum()
