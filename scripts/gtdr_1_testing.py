@@ -576,7 +576,9 @@ for tuple_entry in t41_transactions.columns:
 # Calculate gdp
 
 gross_va_bp = [
-    t41_transactions.iloc[t41_transactions.index.get_level_values(1)=='of which: Wages and salaries',:],
+    t41_transactions.iloc[t41_transactions.index.get_level_values(0)=='Compensation of employees',:].iloc[0,:],
+    # all compensation instead of only wages and salaries.
+    # makes gdp by income and production the same.
     t41_transactions.iloc[t41_transactions.index.get_level_values(0)=='Other taxes less other subsidies on production',:],
     t41_transactions.iloc[t41_transactions.index.get_level_values(1)=='Consumption of fixed capital',:],
     # not sure if the below one is really only the 'net operating surplus'
@@ -588,7 +590,7 @@ gross_va_bp_sum = gross_va_bp.sum().sum()
 # gdp calc and input into dict after the production approach 
 # because they both use taxes less subsidies on products: tls_op
 
-
+t41_coe = t41_transactions.iloc[t41_transactions.index.get_level_values(0)=='Compensation of employees',:].iloc[0,:]
 
 #%% GDP by expenditure approach
 # GDP = FCE (UT) + GCF (UT) + exports of goods and services (UT) - imports of goods and services (ST)
@@ -652,8 +654,9 @@ necessary_columns_pos = [
     t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Final consumption expenditure by NIPSH'],
     t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Final consumption expenditure by government'],
     t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Gross fixed capital formation'],
-    t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Changes in inventories'],
     t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Acquisitions less disposals of valuables'],
+    t43_transactions.iloc[:, t43_transactions.columns.get_level_values(1)=='Changes in inventories'],
+    
     # t43_transactions.iloc[:, t43_clean_mi.columns.get_level_values(0)=='Exports'].iloc[:,0] # works, but dim 78, instead of 78,1
     # additional slicing creates a series instead of a df. If this is a problem: resize
     # the following 
@@ -676,10 +679,19 @@ gdp_expenditure_use_sum = gdp_expenditure_use.sum().sum()  # first sum creates a
 necessary_columns_neg = [
     t30_transactions.iloc[:, t30_transactions.columns.get_level_values(1)=='Imports, cif']
     ]
+# need the cif/fob adjustments on imports, but the column contains a lot of non-floats ('..') and therefore cannot be summed
+# below would work but contains also the total rows and columns.
+# t30_ciffob_adj = t30_table_30_mi.iloc[:, t30_table_30_mi.columns.get_level_values(1)=='cif/fob adjustment on imports']
+# t30_ciffob_adj_list = []
+# for value in t30_ciffob_adj.iloc[:,0]:
+#     if type(value) == float:
+#         t30_ciffob_adj_list.append(value)
+# t30_ciffob_adj_value = np.sum(t30_ciffob_adj_list)        
 
-gdp_expenditure_supply_sum = necessary_columns_neg[0].sum().sum()
 
-gdp_expenditure = gdp_expenditure_use_sum - gdp_expenditure_supply_sum  # too high: mistake in exports? 
+gdp_expenditure_supply_sum = necessary_columns_neg[0].sum().sum() - np.abs(table_30_excel_.iloc[11,87])     # quick & dirty fix of estimated(!) ciffob adjustment values
+
+gdp_expenditure = gdp_expenditure_use_sum - gdp_expenditure_supply_sum  # too high: mistake in exports? # still true?
 
 SU_GDP_approaches_results["expenditure"] = gdp_expenditure
 #%% GDP by production approach
