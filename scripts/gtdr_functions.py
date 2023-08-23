@@ -61,6 +61,21 @@ def excel_df(filename, OECD_table_nr, footer):
         c2 = col_names[2,:]
     
         columns = [c0, c1, c2]
+        
+    if OECD_table_nr == 41:
+        excel_clean = pd.DataFrame(excel_.iloc[10:,6:])
+        row_names = np.array(excel_.iloc[10:,1:4])
+        col_names = np.array(excel_.iloc[6:8,6:])
+        
+        r0 = row_names[:,0]
+        r1 = row_names[:,1]
+        r2 = row_names[:,2]
+        index = [r0, r1, r2]
+        
+        c0 = col_names[0,:]
+        c1 = col_names[1,:]
+    
+        columns = [c0, c1]
 
     index_clean = []
     i = 0
@@ -113,7 +128,8 @@ def excel_df(filename, OECD_table_nr, footer):
 
 
 #%% Dropping intermediate totals
-def drop_int_totals(dataframe, OECD_table_nr, collevel):
+def drop_int_totals(dataframe, OECD_table_nr, collevel):    # collevel is the level at which 
+                                                            # duplicate check needs to happen 
     table_list = [30,43,41]
     if OECD_table_nr in table_list:
         pass
@@ -123,7 +139,7 @@ def drop_int_totals(dataframe, OECD_table_nr, collevel):
 
     transactions = dataframe.copy()   # create deep copy
     
-    
+    # drop rows with '..' entries and estimates
     if OECD_table_nr == 30:
         iloc_dpabr = np.where(transactions.columns.get_loc_level('Direct purchases abroad by residents', level=1)[0] == True)[0][0]
         # gives error because using this function it appears on level 0 (so what is dropped?)
@@ -218,6 +234,29 @@ def drop_int_totals(dataframe, OECD_table_nr, collevel):
                         #test
                         # print(iloc)
                         transactions.drop(transactions.columns[iloc], axis = 1, inplace=True)   # need to specify axis here
-                        
+        
+    return transactions
+
+#%% VA without of-which rows
+def VA_of_which_strip(transactions, OECD_table_nr):
+    if OECD_table_nr == 41:
+        transactions = transactions.iloc[1:,:]
+        transactions.index = transactions.index.droplevel(0)
+        
+        gross_va_bp = [
+            transactions.iloc[transactions.index.get_level_values(0)=='Compensation of employees',:].iloc[0,:].to_frame().T,
+            # all compensation instead of only wages and salaries.
+            # makes gdp by income and production the same.
+            transactions.iloc[transactions.index.get_level_values(0)=='Other taxes less other subsidies on production',:],
+            transactions.iloc[transactions.index.get_level_values(1)=='Consumption of fixed capital',:],
+            # not sure if the below one is really only the 'net operating surplus'
+            transactions.iloc[transactions.index.get_level_values(1)=='Operating surplus and mixed income, net',:]
+            ]
+
+        gross_va_bp = pd.concat(gross_va_bp, axis=0)
+        
+        transactions = gross_va_bp
+    else:
+        print("This function is exclusively for use with table 41: Value Added")
     return transactions
 
