@@ -149,11 +149,12 @@ def drop_int_totals(dataframe, OECD_table_nr, collevel):    # collevel is the le
         iloc_ciffob = np.where(transactions.columns.get_loc_level('cif/fob adjustment on imports', level=1)[0] == True)[0][0]
         transactions.drop(transactions.columns[iloc_ciffob], axis=1, inplace=True)
     
+    # drop 'of-which' rows
+        # is this necessary for now?
+        # yes, otherwise the wrong column gets dropped in the logic of dropping an intermediate column
+        # if need, reattach by concatenation.
     if OECD_table_nr == 43:
         
-        # turn off as test: 
-        # t43_transactions = t43_transactions.iloc[:,0:78]    # until Final demand begins
-    
         # then drop column with '..'; of which: Domestic purchases by non-residents
         # it contains a portion of the column to the left, so not necessary.
         
@@ -259,4 +260,42 @@ def VA_of_which_strip(transactions, OECD_table_nr):
     else:
         print("This function is exclusively for use with table 41: Value Added")
     return transactions
+
+#%% Check for negative values
+# dataframe should not have entries with strings instead of floats (floats include NaNs)
+
+def neg_check(dataframe, OECD_table_nr):
+    # varname = 'neg_dict' + str(OECD_table_nr)     # not necessary if assigning outcome of function to variable
+
+    neg_df = dataframe[dataframe < 0].notna()      # returns True when values are neg, and False otherwise
+
+    neg_df_np = np.array(neg_df)
+
+    true_ilocs = np.where(neg_df_np == True)
+
+    if len(true_ilocs[0]) > 0:
+        neg_dict = {}
+        for i in np.arange(len(true_ilocs[0])):
+            # print(i)
+            child_dict = 'neg_' + str(i)
+            neg_dict.update({
+                child_dict: {
+                'negative value' : dataframe.iloc[true_ilocs[0][i],true_ilocs[1][i]],
+                'source table': 'table_'+ str(OECD_table_nr),
+                'row iloc': true_ilocs[0][i],
+                'col iloc': true_ilocs[1][i],
+                'index location': dataframe.index[true_ilocs[0][i]],
+                'columns location': dataframe.columns[true_ilocs[1][i]]
+                }
+                })
+        print('Negative values were found in table: ', OECD_table_nr)
+        print('See dictionary "neg_dict" corresponding to this table for details on locations. \n')
+        
+    else: 
+        print('No negatives were found in the considered table: ', OECD_table_nr)
+        print('The returned variable by this function is of type "None". \n')
+        # return
+    
+    return neg_dict if 'neg_dict' in locals() else None
+
 
