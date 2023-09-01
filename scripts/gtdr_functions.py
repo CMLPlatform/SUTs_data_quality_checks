@@ -267,7 +267,7 @@ def VA_of_which_strip(transactions, OECD_table_nr):
 def neg_check(dataframe, OECD_table_nr):
     # varname = 'neg_dict' + str(OECD_table_nr)     # not necessary if assigning outcome of function to variable
 
-    neg_df = dataframe[dataframe < 0].notna()      # returns True when values are neg, and False otherwise
+    neg_df = dataframe[dataframe < 0].notna()      # returns True when values are neg, and False otherwise (instead of nan otherwise)
 
     neg_df_np = np.array(neg_df)
 
