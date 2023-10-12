@@ -9,7 +9,7 @@ GTDR
 Assignment 1: GDP from OECD Data
 Clean(er) start for github
 
-
+This one is not complete. Use gtdr_1_gdp.py instead
 """
 
 #%% Change log + to do list
