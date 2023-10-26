@@ -1,0 +1,98 @@
+Total product	
+Output at basic prices (P1), Total activity
+Total supply at basic prices
+Total supply at purchasers' prices	
+  Products of agriculture, forestry and fishing	
+  Manufactured products	
+  Water supply, sewerage, waste management and remediation services	Wholesale&retail trade serv., repair serv. of motor vehicles & motorcycles
+Wholesale&retail trade serv., repair serv. of motor vehicles & cycles
+  Transportation and storage services	
+  Information and communication services	
+  Financial and insurance services	
+  Real estate services	
+  Professional, scientific and technical services	
+  Administrative and support services	
+  Human health and social work services	
+  Arts, entertainment and recreation services	
+  Other services	
+      P1, Agriculture, forestry and fishing
+      P1, Manufacturing
+      P1, Water supply, sewerage, waste management and remediation activities
+      P1, Wholesale and retail trade, repair of motor vehicles and motorcycles
+      P1, Transportation and storage
+      P1, Information and communication
+      P1, Financial and insurance activities
+      P1, Real estate activities
+      P1, Professional, scientific and technical activities
+      P1, Administrative and support service activities
+      P1, Human health and social work activities
+      P1, Arts, entertainment and recreation
+      P1, Other service activities
+    Direct purchases abroad by residents
+    cif/fob adjustment on imports
+P2, Agriculture, forestry and fishing
+      P2, Manufacturing
+      P2, Water supply, sewerage, waste management and remediation activities
+      P2, Wholesale and retail trade, repair of motor vehicles and motorcycles
+      P2, Transportation and storage
+      P2, Information and communication
+      P2, Financial and insurance activities
+      P2, Real estate activities
+      P2, Professional, scientific and technical activities
+      P2, Administrative and support service activities
+      P2, Human health and social work activities
+      P2, Arts, entertainment and recreation
+      P2, Other service activities
+Total use
+  Intermediate consumption (P2), Total activity
+  Final consumption expenditure
+      of which: Domestic purchases by non-residents
+  Gross Capital formation
+    of which: Re-export
+Exports, ESA
+Total product
+Total product at basic prices (bp)
+Total product at purchaser's prices
+Output at basic prices			
+  Value added at basic prices		
+    Operating surplus and mixed income, gross	
+Total activity
+Agriculture, forestry and fishing
+Manufacturing
+Water supply, sewerage, waste management and remediation activities
+Wholesale and retail trade, repair of motor vehicles and motorcycles
+Transportation and storage
+Information and communication
+Financial and insurance activities
+Real estate activities
+Professional, scientific and technical activities
+Administrative and support service activities
+P2, Human health and social work activities
+Arts, entertainment and recreation
+Other service activities
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
