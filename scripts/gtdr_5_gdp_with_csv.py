@@ -115,7 +115,7 @@ for entry in t_30.index:
         
 # Manual drops because for some reason they're not picked up
 # see also at table 43, consider fix mentioned there
-t_30.drop(index='Wholesale&retail trade serv., repair serv. of motor vehicles & motorcycles', inplace=True)
+# t_30.drop(index='Wholesale&retail trade serv., repair serv. of motor vehicles & motorcycles', inplace=True)
 
 for entry in t_30.columns: 
     if entry in t_30_ignore_list:
@@ -132,6 +132,10 @@ for entry in t_43.index:
 # manually drop taxes less subsidies row, which is there for no apparent reason in the csv
 # and necessary as a column from other tables later on
 # nicer fix: make txt files for every table.
+
+# check value of the tls on products first: 
+tls_on_products = t_43.loc['Taxes less subsidies on products',:].sum()
+
 t_43.drop(index='Taxes less subsidies on products', inplace=True)
 # t_43.drop(index='Wholesale&retail trade serv., repair serv. of motor vehicles & cycles', inplace=True)
 
@@ -199,7 +203,10 @@ t_30_drop_for_production = pd.concat([
 
 # t_30_transactions = t_30
 
+# actually output at bp, not supply.
 total_supply_bp = t_30.sum().sum() - t_30_drop_for_production.sum().sum()
+# correct value: 1,569,815 
+# here: 1569815.0
 
 t_43_drop_for_production = pd.concat([
     t_43.loc[:,'Acquisitions less disposals of valuables'],
@@ -212,13 +219,16 @@ t_43_drop_for_production = pd.concat([
     ],axis=1)
 
 intermediate_consumption = t_43.sum().sum() - t_43_drop_for_production.sum().sum()
+# correct value: 844855.0
+# here: 822209.0
 
 gross_va = total_supply_bp - intermediate_consumption
 # correct value: 724960
-# here: 673831
+# here: 747606.0
 
 tls_op = t_30.loc[:,'Taxes less subsidies on products'].sum()
 # correct value: 88095
+# here: 88095.0
 
 gdp_production = gross_va + tls_op
 SU_GDP_approaches_results["production"] = gdp_production
@@ -286,7 +296,7 @@ necessary_columns_pos = pd.concat([
 
 gdp_expenditure_use_sum = necessary_columns_pos.sum().sum()
 # correct value: 1389061.0
-# here: 1516530.0
+# here: 1323612.0 --> most column sums are off. Especially for the bigger values like GFCF, this adds up
 
 necessary_columns_neg = pd.concat([
     t_30.loc[:,'Imports, cif']
@@ -298,6 +308,7 @@ ciffob_adj = t_30_csv.loc[5228, 'Value']
 # correct value: -2267
 # here: -2267
 
+# imports minus adjustments
 gdp_expenditure_supply_sum = necessary_columns_neg.sum().sum() - np.abs(ciffob_adj)
 # correct value: 576006
 # here: 576006.0
@@ -307,7 +318,7 @@ gdp_expenditure = gdp_expenditure_use_sum - gdp_expenditure_supply_sum
 SU_GDP_approaches_results["expenditure"] = gdp_expenditure
 
 print(SU_GDP_approaches_results)
-print("The correct values are: {'income': 813055, 'expenditure': 813055.0, 'production': 813055}")
+print("The correct values are: \n {'income': 813055, 'expenditure': 813055.0, 'production': 813055}")
 #%% MI via excel (not preferred, needs excel file in addition to CSV)
 
 # t_30_xlsx = pd.read_excel('OECD_Data_downloads\Table_30.xlsx', engine="openpyxl", skipfooter=3)
@@ -382,3 +393,17 @@ print("The correct values are: {'income': 813055, 'expenditure': 813055.0, 'prod
 
 #%% testing
 # t_30.iloc[0][0] = 111
+
+# the products that are spelled marginally different between the tables: 
+    
+# print('t30 \n')
+
+# for name in t_30_index_check:
+#     if name not in t_43_index_check:
+#         print(name, '\n')
+        
+# print('t43 \n')
+
+# for name in t_43_index_check:
+#     if name not in t_30_index_check:
+#         print(name, '\n')
