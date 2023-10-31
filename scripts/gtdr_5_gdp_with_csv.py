@@ -136,7 +136,11 @@ for entry in t_43.index:
 # check value of the tls on products first: 
 tls_on_products = t_43.loc['Taxes less subsidies on products',:].sum()
 
-t_43.drop(index='Taxes less subsidies on products', inplace=True)
+# t_43.drop(index='Taxes less subsidies on products', inplace=True)
+# NOT dropping the TLS row, fixes the GDP calculations
+# unsure why this row is present as it is not there in the xls file
+# which is apparently in purchaser's prices instead of bp
+
 # t_43.drop(index='Wholesale&retail trade serv., repair serv. of motor vehicles & cycles', inplace=True)
 
 for entry in t_43.columns: 
@@ -184,7 +188,8 @@ for entry in t_41.index:
 for entry in t_41.columns: 
     if entry in t_30_ignore_list:
         t_41.drop(columns = entry, inplace=True) 
-        
+
+t_41_columns_check = t_41.columns     
 
 #%% calc gdp 3 ways:
 
@@ -207,6 +212,7 @@ t_30_drop_for_production = pd.concat([
 total_supply_bp = t_30.sum().sum() - t_30_drop_for_production.sum().sum()
 # correct value: 1,569,815 
 # here: 1569815.0
+# correct
 
 t_43_drop_for_production = pd.concat([
     t_43.loc[:,'Acquisitions less disposals of valuables'],
@@ -221,6 +227,10 @@ t_43_drop_for_production = pd.concat([
 intermediate_consumption = t_43.sum().sum() - t_43_drop_for_production.sum().sum()
 # correct value: 844855.0
 # here: 822209.0
+# difference: 22646 --> NOT equal to 220,157 = of which: Re-export
+# t_43_drop_for_production.sum().sum() is too low:
+    # here: 1323612.0
+
 
 gross_va = total_supply_bp - intermediate_consumption
 # correct value: 724960
@@ -245,7 +255,7 @@ SU_GDP_approaches_results["production"] = gdp_production
 # gdp_production = gross_va + tls_op
 # SU_GDP_approaches_results["production"] = gdp_production
 
-#%% GDP by income approach - Leave to last
+#%% GDP by income approach - Leave to last --> CORRECT
 # GDP = Gross VA at BP (other table) + taxes less subsidies on products (ST)
 # Gross VA at BP = compensation of employees + other net taxes on production + consumption of fixed capital + net operating surplus
 # use table 41
@@ -304,7 +314,7 @@ necessary_columns_neg = pd.concat([
 # correct values: 578273
 # here: 578273.0
 
-ciffob_adj = t_30_csv.loc[5228, 'Value']
+ciffob_adj = t_30_csv.loc[5228, 'Value']    # 5228 = ciffob correction
 # correct value: -2267
 # here: -2267
 
