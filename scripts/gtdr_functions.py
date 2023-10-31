@@ -164,7 +164,7 @@ def drop_int_totals(dataframe, OECD_table_nr, collevel):    # collevel is the le
         transactions.drop(transactions.columns[iloc_owdpbnr], axis=1, inplace=True)
         # drops the column, but intermediate totals of the upper levels are not dropped
         
-        # droping the re-export column
+        # dropping the re-export column
         # it contains a portion of the column to the left, so not necessary.
         iloc_eowre = np.where(transactions.columns.get_loc_level('of which: Re-export', level=1)[0] == True)[0][0]
         transactions.drop(transactions.columns[iloc_eowre], axis=1, inplace=True)
