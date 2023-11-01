@@ -301,3 +301,171 @@ def neg_check(dataframe, OECD_table_nr):
     return neg_dict if 'neg_dict' in locals() else None
 
 
+#%% GDP calculations with CSV file input (as opposed to xls(x) files)
+
+# import & prep
+def csv_input(path_var, table_nr):
+    t_csv = pd.read_csv(path_var, header=0)
+    if table_nr == 30:
+        for row in t_csv.index:  # not specifying .index results in iteration over every field instead of the row nr.
+            t_csv.loc[row, 'Transaction'] = t_csv.loc[row, 'Transaction'].strip()
+            t_csv.loc[row, 'Product'] = t_csv.loc[row, 'Product'].strip()
+            
+        transactions = t_csv.loc[:,'Transaction'].unique()
+        products = t_csv.loc[:,'Product'].unique()
+
+        t_df = pd.DataFrame(np.full((len(products),len(transactions)), np.nan), index=products, columns=transactions)
+        t_df.sort_index(inplace=True)
+        t_df.sort_index(axis=1, inplace=True)
+
+        for row in t_csv.index:
+            # print(row) # --> gives index as integer now
+            t_df.loc[t_csv.loc[row,'Product'], t_csv.loc[row,'Transaction']] = t_csv.loc[row,'Value']
+            
+    elif table_nr == 43:
+        for row in t_csv.index:  # not specifying .index results in iteration over every field instead of the row nr.
+            t_csv.loc[row, 'Transaction'] = t_csv.loc[row, 'Transaction'].strip()
+            t_csv.loc[row, 'Product'] = t_csv.loc[row, 'Product'].strip(', bp')
+            t_csv.loc[row, 'Product'] = t_csv.loc[row, 'Product'].strip()
+            
+        transactions = t_csv.loc[:,'Transaction'].unique()
+        products = t_csv.loc[:,'Product'].unique()
+
+        t_df = pd.DataFrame(np.full((len(products),len(transactions)), np.nan), index=products, columns=transactions)
+        t_df.sort_index(inplace=True)
+        t_df.sort_index(axis=1, inplace=True)
+
+        for row in t_csv.index:
+            t_df.loc[t_csv.loc[row,'Product'], t_csv.loc[row,'Transaction']] = t_csv.loc[row,'Value']
+
+    elif table_nr == 41:
+        for row in t_csv.index:  # not specifying .index results in iteration over every field instead of the row nr.
+            t_csv.loc[row, 'Transaction'] = t_csv.loc[row, 'Transaction'].strip()
+            t_csv.loc[row, 'Activity'] = t_csv.loc[row, 'Activity'].strip()
+            
+        transactions = t_csv.loc[:,'Transaction'].unique()
+        activities = t_csv.loc[:,'Activity'].unique()
+
+        t_df = pd.DataFrame(np.full((len(transactions),len(activities)), np.nan), index=transactions, columns=activities)
+        t_df.sort_index(inplace=True)
+        t_df.sort_index(axis=1, inplace=True)
+
+        for row in t_csv.index:
+            # only use the rows with current prices, not constant prices from last year.
+            if t_csv.loc[row,'MEASURE'] == 'C':
+                t_df.loc[t_csv.loc[row,'Transaction'], t_csv.loc[row,'Activity']] = t_csv.loc[row,'Value']
+    
+    else: 
+        print('This table is not included in gdp calculations: ', table_nr)
+    
+    return t_df # dataframe
+
+
+def gdp_csv(t_30, t_43, t_41, ignore_list_path, t_30_csv_path):  
+    # the 3 created DFs
+    # the path to the ignore list
+    # the path to the csv file of t_30 (for ciffob adj value)
+    
+    ignore_ = open(ignore_list_path, "r")
+    ignore = ignore_.read().split('\n')
+    ignore_list = []
+    for line in ignore:
+        if line != '':
+            ignore_list.append(line.strip())
+    
+    table_list = [
+        t_30,
+        t_43,
+        t_41
+        ]        
+    
+    for df in table_list:
+        for entry in df.index: 
+            if entry in ignore_list:
+                df.drop(index = entry, inplace=True) 
+        for entry in df.columns: 
+            if entry in ignore_list:
+                df.drop(columns = entry, inplace=True)
+    
+    SU_GDP_approaches_results = {"income": None, "expenditure": None, "production": None}
+    
+    # Production approach 
+    t_30_drop_for_production = pd.concat([
+        t_30.loc[:,'Imports, cif'],
+        t_30.loc[:,'Taxes less subsidies on products'],
+        t_30.loc[:,'Trade and transport margins']
+        ], axis=1)
+
+    # actually output at bp, not supply.
+    total_supply_bp = t_30.sum().sum() - t_30_drop_for_production.sum().sum()
+
+    t_43_drop_for_production = pd.concat([
+        t_43.loc[:,'Acquisitions less disposals of valuables'],
+        t_43.loc[:,'Changes in inventories'],
+        t_43.loc[:,'Exports'],
+        t_43.loc[:,'Final consumption expenditure by NIPSH'],
+        t_43.loc[:,'Final consumption expenditure by government'],
+        t_43.loc[:,'Final consumption expenditure by households, domestic concept'],
+        t_43.loc[:,'Gross fixed capital formation'],
+        ],axis=1)
+
+    intermediate_consumption = t_43.sum().sum() - t_43_drop_for_production.sum().sum()
+
+    gross_va = total_supply_bp - intermediate_consumption
+
+    tls_op = t_30.loc[:,'Taxes less subsidies on products'].sum()
+
+    gdp_production = gross_va + tls_op
+    
+    SU_GDP_approaches_results["production"] = gdp_production
+    
+    # income approach
+    gross_va_bp = [
+        t_41.loc['Compensation of employees',:],
+        # all compensation instead of only wages and salaries.
+        # makes gdp by income and production the same.
+        t_41.loc['Other taxes less other subsidies on production',:],
+        t_41.loc['Consumption of fixed capital',:],
+        # not sure if the below one is really only the 'net operating surplus'
+        t_41.loc['Operating surplus and mixed income, net',:]
+        ]
+
+    gross_va_bp = pd.concat(gross_va_bp, axis=0)
+    gross_va_bp_sum = gross_va_bp.sum().sum()
+
+    gdp_income = gross_va_bp_sum + tls_op
+    
+    SU_GDP_approaches_results["income"] = gdp_income
+    
+    # expenditure approach
+    necessary_columns_pos = pd.concat([
+        t_43.loc[:,'Final consumption expenditure by households, domestic concept'],
+        t_43.loc[:,'Final consumption expenditure by NIPSH'],
+        t_43.loc[:,'Final consumption expenditure by government'],
+        t_43.loc[:,'Gross fixed capital formation'],
+        t_43.loc[:,'Acquisitions less disposals of valuables'],
+        t_43.loc[:,'Changes in inventories'],
+        t_43.loc[:,'Exports']
+        ], axis=1)
+
+    gdp_expenditure_use_sum = necessary_columns_pos.sum().sum()
+
+    necessary_columns_neg = pd.concat([
+        t_30.loc[:,'Imports, cif']
+        ], axis=1)
+
+    # either include t_30 csv in the function input, or just hardcode the ciffob correction here
+    # hardcoding seems error prone.
+    t_30_csv = pd.read_csv(t_30_csv_path, header=0)
+    ciffob_adj = t_30_csv.loc[5228, 'Value']    # t_30 row 5228 = ciffob correction (= -2267 for NL 2019)
+
+    # imports minus adjustments
+    gdp_expenditure_supply_sum = necessary_columns_neg.sum().sum() - np.abs(ciffob_adj)
+
+    gdp_expenditure = gdp_expenditure_use_sum - gdp_expenditure_supply_sum  
+
+    SU_GDP_approaches_results["expenditure"] = gdp_expenditure
+    
+    return SU_GDP_approaches_results # GDP_vals
+
+
