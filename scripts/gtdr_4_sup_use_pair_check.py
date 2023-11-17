@@ -102,18 +102,18 @@ for i in np.arange(0, len(t_43_products)):
     else:
         t_43_industry_list.append(t_43_industries[i])
         
-test = t_30_transactions.loc[[t_30_product_list[3]],[t_30_industry_list[3]]]
-test_1 = t_30_transactions.loc[[t_30_product_list[3]]]
-test_2 = t_30_transactions.loc[[t_30_product_list[3]], [3]]
-test_3 = t_30_transactions.loc[[t_30_product_list[3]],[t_30_industry_list[3]]]
-test_4 = t_30_transactions.loc[[t_30_industry_list[3]]]
-# test_5 = t_30_transactions.loc[('nan', [t_30_product_list[1]]),('nan', 'nan', 'nan', [t_30_industry_list[1]])]
-test_6 = t_30_transactions.iloc[[3],[3]]    # returns df of size (1,1)
-test_6_a = test_6.iloc[0]                   # returns series
-test_6_b = test_6.iloc[0][0]                # returns int (value)
-test_7 = t_30_transactions.iloc[1],[1]      # returns tuple of size 2
-                                            # first series of row [1], then [1] (so the given [1] instead of a value)
-test_8 = t_30_transactions.iloc[1][1]       # returns int (value) --> use for diagonal
+# test = t_30_transactions.loc[[t_30_product_list[3]],[t_30_industry_list[3]]]
+# test_1 = t_30_transactions.loc[[t_30_product_list[3]]]
+# test_2 = t_30_transactions.loc[[t_30_product_list[3]], [3]]
+# test_3 = t_30_transactions.loc[[t_30_product_list[3]],[t_30_industry_list[3]]]
+# test_4 = t_30_transactions.loc[[t_30_industry_list[3]]]
+# # test_5 = t_30_transactions.loc[('nan', [t_30_product_list[1]]),('nan', 'nan', 'nan', [t_30_industry_list[1]])]
+# test_6 = t_30_transactions.iloc[[3],[3]]    # returns df of size (1,1)
+# test_6_a = test_6.iloc[0]                   # returns series
+# test_6_b = test_6.iloc[0][0]                # returns int (value)
+# test_7 = t_30_transactions.iloc[1],[1]      # returns tuple of size 2
+#                                             # first series of row [1], then [1] (so the given [1] instead of a value)
+# test_8 = t_30_transactions.iloc[1][1]       # returns int (value) --> use for diagonal
 
 supply_diagonal_zeros = {}
 for i in np.arange(0, len(t_30_transactions)):
@@ -224,10 +224,10 @@ Is that what Franco meant when he said 'column by column comparison'. During one
 #                 }
 #             })
 
-test_list = [1,2,3,4,5]
-test_array = np.array(test_list)
-test_array_sum = test_array.sum()
-test_slice = t_43_transactions.iloc[supply_diagonal_zeros[item]['row']][:]
-test_slice_sum = test_slice.sum()
+# test_list = [1,2,3,4,5]
+# test_array = np.array(test_list)
+# test_array_sum = test_array.sum()
+# test_slice = t_43_transactions.iloc[supply_diagonal_zeros[item]['row']][:]
+# test_slice_sum = test_slice.sum()
 
 #%% Check use but no supply
