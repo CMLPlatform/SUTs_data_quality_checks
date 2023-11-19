@@ -111,7 +111,10 @@ for i in np.arange(0, len(t_30_transactions)):
 total_factor_input = {}
 for item in zero_sup_ind:
     # print(item)
-    j = zero_sup_ind['P1, Activities of extraterritorial organizations and bodies']['column']
+    
+    # what is j, and should it not be less hard-coded? 
+    j = zero_sup_ind['P1, Activities of extraterritorial organizations and bodies']['column']   # correct?
+    
     for i in np.arange(0,len(t_41_wo_totals.index)):
         if t_41_wo_totals.iloc[i][j] != 0:
             child_dict = t_41_factor_input_list[i]
