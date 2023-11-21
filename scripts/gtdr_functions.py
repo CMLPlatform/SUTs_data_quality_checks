@@ -468,4 +468,188 @@ def gdp_csv(t_30, t_43, t_41, ignore_list_path, t_30_csv_path):
     
     return SU_GDP_approaches_results # GDP_vals
 
+#%% Create industry/product/activity lists
 
+def indices_lists(df_relevant_levels, table_nr):   # uses table 30 or 43 transaction slices
+
+    product_list = []
+    industry_list = []
+                                                                        # or table 41 without totals
+    # t_30   
+    if table_nr == 30:
+        
+        t_30_main_products = df_relevant_levels.index.get_level_values(0)
+        t_30_products = df_relevant_levels.index.get_level_values(1)
+        t_30_main_industries = df_relevant_levels.columns.get_level_values(2)
+        t_30_industries = df_relevant_levels.columns.get_level_values(3)
+    
+
+    
+        for i in np.arange(0, len(t_30_products)):
+            if type(t_30_products[i]) == float:
+                # print(i, t_30_main_products[i], t_30_products[i])
+                product_list.append(t_30_main_products[i])
+            else:
+                product_list.append(t_30_products[i])
+                
+            if type(t_30_industries[i]) == float:
+                industry_list.append(t_30_main_industries[i])
+            else:
+                industry_list.append(t_30_industries[i])
+       
+    # t_43
+    elif table_nr == 43:
+        
+        # start with getting lowest level names of the square table: products and industries.
+        t_43_main_products = df_relevant_levels.index.get_level_values(0)
+        t_43_products = df_relevant_levels.index.get_level_values(1)
+        t_43_main_industries = df_relevant_levels.columns.get_level_values(1)
+        t_43_industries = df_relevant_levels.columns.get_level_values(2)
+    
+        for i in np.arange(0, len(t_43_products)):
+            if type(t_43_products[i]) == float:
+                # print(i, t_30_main_products[i], t_30_products[i])
+                product_list.append(t_43_main_products[i])
+            else:
+                product_list.append(t_43_products[i])
+                
+            if type(t_43_industries[i]) == float:
+                industry_list.append(t_43_main_industries[i])
+            else:
+                industry_list.append(t_43_industries[i])
+    
+    
+        # use_zeros.update({'Product name': t_43_product_list[63],'row':63, 'column': 63})
+        # need a nested dictionary instead to keep from overwriting last value.
+    
+    # t_43
+    elif table_nr == 41:
+        
+        t_41_levelzero_factor_inputs = df_relevant_levels.index.get_level_values(0)
+        t_41_main_factor_inputs = df_relevant_levels.index.get_level_values(1)
+        t_41_factor_inputs = df_relevant_levels.index.get_level_values(2)
+        t_41_main_activities = df_relevant_levels.columns.get_level_values(0)
+        t_41_activities = df_relevant_levels.columns.get_level_values(1)
+    
+    
+        for i in np.arange(0, len(t_41_factor_inputs)):
+                
+            if type(t_41_factor_inputs[i]) == float:
+                # print(i, t_30_main_products[i], t_30_products[i])
+                product_list.append(t_41_main_factor_inputs[i])   # = factor inputs
+            else:
+                product_list.append(t_41_factor_inputs[i])    # = factor inputs
+                
+            if type(t_41_activities[i]) == float:
+                industry_list.append(t_41_main_activities[i])      # = activities
+            else:
+                industry_list.append(t_41_activities[i])   # = activities
+            
+    return product_list, industry_list
+    
+#%% Supply / Use pairs
+
+def supply_use_pairs(table_30_transactions, table_43_transactions, table_41_transactions, table_41_wo_totals, 
+                     t_30_products, t_30_industries, t_43_products, t_43_industries, t_41_fi, t_41_activities):
+            
+    # now check use and supply 
+    
+    t_30_row_sum = table_30_transactions.sum(axis=1) 
+    t_43_row_sum = table_43_transactions.sum(axis=1)
+    
+    supply_zero_use_nonzero = {}
+    supply_nonzero_use_zero = {}
+
+    for i in np.arange(len(t_43_products)):
+        # supply but no use
+        if t_43_row_sum[i] == 0 and t_30_row_sum[i] !=0:
+            child_dict = t_43_products[i]
+            supply_zero_use_nonzero.update({
+                child_dict: {
+                    'use': t_43_row_sum[i],
+                    'supply': t_30_row_sum[i]
+                    }
+                })
+        # use but no supply
+        elif t_43_row_sum[i] != 0 and t_30_row_sum[i] ==0:
+            child_dict = t_43_products[i]
+            supply_nonzero_use_zero.update({
+                child_dict: {
+                    'use': t_43_row_sum[i],
+                    'supply': t_30_row_sum[i]
+                    }
+                })
+    
+    # and now check for large differences
+    # (!) possible to make the boundary conditions here a variable input
+
+    t_41_activities_fi_sum = table_41_transactions.sum()    # sum of fi per activity/industry/product
+
+    # For loop: loop through the supply table, compare with 2 conditions:
+        # what the use + factor inputs of that product is.
+        # if there are still a lot of discrepancies: see if you need to use FD (t_43) as well as FI.
+        
+    # use i in for loop because the products and activities have the same index in 30, 43, and 41.
+    supply_use_bigdif = {}
+    for i in np.arange(len(t_30_row_sum)):
+        if t_30_row_sum[i] <= 0.5*(t_43_row_sum[i] + t_41_activities_fi_sum[i]) or \
+            t_30_row_sum[i] >= 2*(t_43_row_sum[i] + t_41_activities_fi_sum[i]):     # '\' = linebreak
+            child_dict = t_30_products[i]
+            supply_use_bigdif.update({
+                child_dict: {
+                    'Supply': t_30_row_sum[i],
+                    'Use + FI': t_43_row_sum[i] + t_41_activities_fi_sum[i]
+                    }
+                })
+    
+    return supply_zero_use_nonzero, supply_nonzero_use_zero, supply_use_bigdif     
+    # returns 1 dict with the dictionairies showing the discrepancies
+    # supply_zero_use_nonzero = [0]
+    # supply_nonzero_use_zero = [1]
+    # supply_use_bigdif = [2]
+
+
+#%% Factor inputs in industry but no supply 
+
+def fi_in_industry_no_supply(table_30_transactions, table_41_wo_totals,
+                             t_30_products, t_30_industries, t_41_fi, t_41_activities):
+    
+    # Find industries with no supply (colsums t_30 transactions): create dict
+    # --> not necessary: just know where to find it in the table
+    # need to find an industry's supply and if that's 0, check against the VARIOUS factor inputs (not totals).
+
+    t_30_totals_cols = table_30_transactions.sum(axis=0)
+    zero_sup_ind = {}
+    for i in np.arange(0, len(table_30_transactions)):
+        if t_30_totals_cols.iloc[i] == 0:
+            child_dict = t_30_industries[i]
+            zero_sup_ind.update({
+                child_dict: {
+                    'Industry': t_30_industries,
+                    'column': i, 
+                    'value': table_30_transactions.iloc[i][i]
+                    }
+                })
+    
+    # For the industries with no supply, check all factor inputs for nonzeros.
+    
+    total_factor_input = {}
+    for item in zero_sup_ind:
+        # print(item)
+        
+        # what is j, and should it not be less hard-coded? 
+        j = zero_sup_ind['P1, Activities of extraterritorial organizations and bodies']['column']   # correct?
+        
+        for i in np.arange(0,len(table_41_wo_totals.index)):
+            if table_41_wo_totals.iloc[i][j] != 0:
+                child_dict = t_41_fi[i]
+                total_factor_input.update({
+                    child_dict: {
+                        'Industry': item, 
+                        'row': i, 
+                        'column': j, 
+                        'value': table_41_wo_totals.iloc[i][j]
+                        }
+                    })
+            
+    return total_factor_input
