@@ -43,6 +43,7 @@ t_41_wo_totals = functions.drop_int_totals(t_41, 41, 0)
 # slice 41
 t_41_transactions = functions.VA_of_which_strip(t_41_wo_totals, 41)
 
+
 #%% create industries and products lists
 
 t_30_indices_tuple = functions.indices_lists(t_30_transactions, 30)
@@ -63,45 +64,4 @@ no_sup_with_fi = functions.fi_in_industry_no_supply(t_30_transactions, t_41_wo_t
 print('the following', len(no_sup_with_fi), 
       'industries have no supply, but there are nonzero factor inputs: \n',
       no_sup_with_fi, '\n')
-#%% Find industries with no supply (colsums t_30 transactions): create dict
-# # --> not necessary: just know where to find it in the table
-# # need to find an industry's supply and if that's 0, check against the VARIOUS factor inputs (not totals).
 
-# t_30_totals_cols = t_30_transactions.sum(axis=0)
-# zero_sup_ind = {}
-# for i in np.arange(0, len(t_30_transactions)):
-#     if t_30_totals_cols.iloc[i] == 0:
-#         child_dict = t_30_industry_list[i]
-#         zero_sup_ind.update({
-#             child_dict: {
-#                 'Industry': t_30_industry_list[i], 
-#                 'row': i, 
-#                 'column': i, 
-#                 'value': t_30_transactions.iloc[i][i]
-#                 }
-#             })
-
-#%% For the industries with no supply, check all factor inputs for nonzeros.
-
-# total_factor_input = {}
-# for item in zero_sup_ind:
-#     # print(item)
-    
-#     # what is j, and should it not be less hard-coded? 
-#     j = zero_sup_ind['P1, Activities of extraterritorial organizations and bodies']['column']   # correct?
-    
-#     for i in np.arange(0,len(t_41_wo_totals.index)):
-#         if t_41_wo_totals.iloc[i][j] != 0:
-#             child_dict = t_41_fi_list[i]
-#             total_factor_input.update({
-#                 child_dict: {
-#                     'Industry': item, 
-#                     'row': i, 
-#                     'column': j, 
-#                     'value': t_41_wo_totals.iloc[i][j]
-#                     }
-#                 })
-            
-# print('the following', len(total_factor_input), 
-#       'industries have no supply, but there are nonzero factor inputs: \n',
-#       total_factor_input, '\n')
